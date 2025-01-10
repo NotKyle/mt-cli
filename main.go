@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/fatih/color"
 	"io"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/fatih/color"
 
 	"github.com/joho/godotenv"
 )
@@ -24,7 +25,7 @@ type TaskComment struct {
 	Text string `json:"text"`
 }
 
-func GetAllTasks() {
+func GetAllTasks(output bool) []Task {
 
 	requestURL := fmt.Sprintf("%s/sections/%s/tasks?assigned_to_me=true&status=open",
 		os.Getenv("MEISTERTASK_API_BASE_URL"),
@@ -46,38 +47,65 @@ func GetAllTasks() {
 		os.Exit(1)
 	}
 
-	for _, task := range tasks {
-		color.Cyan("Task Details:")
-		color.Green("Task ID: %d\n", task.ID)
-		color.Green("Task Name: %s\n", task.Name)
-		fmt.Println("\n")
+	if output {
+		for _, task := range tasks {
+			color.Cyan("Task Details:")
+			color.Green("Task ID: %d\n", task.ID)
+			color.Green("Task Name: %s\n", task.Name)
+			fmt.Println("\n")
+		}
+
+		return nil
+	}
+
+	return tasks
+}
+
+func GetTaskDetailsByIndex(index int) {
+	tasks := GetAllTasks(false)
+
+	if index < 0 || index >= len(tasks) {
+		color.Red("Invalid task index\n")
+		os.Exit(1)
+	}
+
+	if len(tasks) == 0 {
+		color.Red("No tasks found\n")
+		os.Exit(1)
+	}
+
+	taskComments := GetTaskDetails(tasks[index].ID)
+
+	color.Cyan("Task Details:")
+	color.Green("Task ID: %d\n", tasks[index].ID)
+	color.Green("Task Name: %s\n", tasks[index].Name)
+	color.Green("Task Section: %s\n", tasks[index].SectionName)
+
+	color.Cyan("\nTask Comments:")
+	for _, comment := range taskComments {
+		color.Green("%s\n", comment.Text)
 	}
 }
 
-func GetTaskDetails(taskToGet string) {
-	requestURL := fmt.Sprintf("%s/tasks/%s/comments",
+func GetTaskDetails(taskToGet int) []TaskComment {
+	requestURL := fmt.Sprintf("%s/tasks/%d/comments",
 		os.Getenv("MEISTERTASK_API_BASE_URL"),
 		taskToGet)
 
 	resBody, err := MakeRequest(requestURL)
 	if err != nil {
-		color.Red("Error making request %s\n", err)
+		color.Red("Error making request: %s\n", err)
 		os.Exit(1)
 	}
 
 	var taskComments []TaskComment
-
 	err = json.Unmarshal(resBody, &taskComments)
 	if err != nil {
-		color.Red("Error unmarshalling response %s\n", err)
+		color.Red("Error unmarshalling response: %s\n", err)
 		os.Exit(1)
 	}
 
-	color.Cyan("Task Comment Details (%s):", taskToGet)
-	for _, taskComment := range taskComments {
-		color.Green("Task Comment: %s\n", taskComment.Text)
-		fmt.Println("\n")
-	}
+	return taskComments
 }
 
 func MakeRequest(url string) ([]byte, error) {
@@ -117,18 +145,18 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	taskToGet := flag.String(
+	taskToGet := flag.Int(
 		"task",
-		"",
+		-1,
 		"The task to fetch more details for",
 	)
 
 	flag.Parse()
 
-	if *taskToGet != "" {
-		GetTaskDetails(*taskToGet)
+	if *taskToGet != -1 {
+		GetTaskDetailsByIndex(*taskToGet)
 	} else {
-		GetAllTasks()
+		GetAllTasks(true)
 	}
 
 	if err != nil {
