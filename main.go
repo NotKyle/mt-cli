@@ -52,7 +52,7 @@ func GetAllTasks(output bool) []Task {
 			color.Cyan("Task Details:")
 			color.Green("Task ID: %d\n", task.ID)
 			color.Green("Task Name: %s\n", task.Name)
-			fmt.Println("\n")
+			fmt.Println()
 		}
 
 		return nil

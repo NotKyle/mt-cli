@@ -1,9 +1,17 @@
 package main
 
 import (
-	"regexp"
 	"testing"
+
+	"github.com/joho/godotenv"
 )
 
-// TODO: Implement tests
-func TestMain() {}
+func TestTasks(t *testing.T) {
+	godotenv.Load()
+
+	tasks := GetAllTasks(false)
+
+	if len(tasks) == 0 {
+		t.Errorf("Expected tasks to be greater than 0")
+	}
+}
