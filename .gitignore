@@ -1,0 +1,5 @@
+.env
+.bfg-report/
+notkyle.meistertask
+.bfg-report/*
+..bfg-report/*
