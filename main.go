@@ -146,7 +146,7 @@ func main() {
 	}
 
 	taskToGet := flag.Int(
-		"task",
+		"get",
 		-1,
 		"The task to fetch more details for",
 	)
@@ -154,7 +154,8 @@ func main() {
 	flag.Parse()
 
 	if *taskToGet != -1 {
-		GetTaskDetailsByIndex(*taskToGet)
+		index := (*taskToGet - 1)
+		GetTaskDetailsByIndex(index)
 	} else {
 		GetAllTasks(true)
 	}
