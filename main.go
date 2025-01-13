@@ -26,10 +26,13 @@ type TaskComment struct {
 }
 
 func GetAllTasks(output bool) []Task {
+	vars := getVars()
+	API_BASE_URL := vars[0]
+	LANE_ID := vars[1]
 
 	requestURL := fmt.Sprintf("%s/sections/%s/tasks?assigned_to_me=true&status=open",
-		os.Getenv("MEISTERTASK_API_BASE_URL"),
-		os.Getenv("LANE_ID"))
+		API_BASE_URL,
+		LANE_ID)
 
 	resBody, err := MakeRequest(requestURL)
 
@@ -61,6 +64,24 @@ func GetAllTasks(output bool) []Task {
 	return tasks
 }
 
+func getVars() [3]string {
+	// Attempt to load .env only if the file exists
+	if _, fileErr := os.Stat(".env"); fileErr == nil {
+		err := godotenv.Load()
+
+		if err != nil {
+			log.Fatalf("Error loading .env file: %v", err)
+		}
+	}
+
+	// Read variables from environment
+	API_BASE_URL := os.Getenv("MEISTERTASK_API_BASE_URL")
+	LANE_ID := os.Getenv("LANE_ID")
+	API_TOKEN := os.Getenv("MEISTERTASK_API_KEY")
+
+	return [3]string{API_BASE_URL, LANE_ID, API_TOKEN}
+}
+
 func GetTaskDetailsByIndex(index int) {
 	tasks := GetAllTasks(false)
 
@@ -88,8 +109,11 @@ func GetTaskDetailsByIndex(index int) {
 }
 
 func GetTaskDetails(taskToGet int) []TaskComment {
+	vars := getVars()
+	API_BASE_URL := vars[0]
+
 	requestURL := fmt.Sprintf("%s/tasks/%d/comments",
-		os.Getenv("MEISTERTASK_API_BASE_URL"),
+		API_BASE_URL,
 		taskToGet)
 
 	resBody, err := MakeRequest(requestURL)
@@ -109,8 +133,10 @@ func GetTaskDetails(taskToGet int) []TaskComment {
 }
 
 func MakeRequest(url string) ([]byte, error) {
+	vars := getVars()
+	API_TOKEN := vars[2]
 
-	var bearer = "Bearer " + os.Getenv("MEISTERTASK_API_KEY")
+	var bearer = "Bearer " + API_TOKEN
 
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("Authorization", bearer)
@@ -139,10 +165,18 @@ func MakeRequest(url string) ([]byte, error) {
 
 func main() {
 
-	err := godotenv.Load()
+	// Get environment variables
+	vars := getVars()
 
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	API_BASE_URL := vars[0]
+	LANE_ID := vars[1]
+
+	// Ensure critical environment variables are present
+	if API_BASE_URL == "" {
+		log.Fatal("Error: MEISTERTASK_API_BASE_URL is not set")
+	}
+	if LANE_ID == "" {
+		log.Fatal("Error: LANE_ID is not set")
 	}
 
 	taskToGet := flag.Int(
@@ -158,9 +192,5 @@ func main() {
 		GetTaskDetailsByIndex(index)
 	} else {
 		GetAllTasks(true)
-	}
-
-	if err != nil {
-		log.Fatal("Error loading .env file")
 	}
 }
