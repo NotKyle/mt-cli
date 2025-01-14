@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/fatih/color"
 
@@ -50,8 +51,40 @@ func GetAllTasks(output bool) []Task {
 		os.Exit(1)
 	}
 
+	homeDir, err := os.UserHomeDir()
+
+	lastAccessed := time.Now().Unix()
+
+	tasksFile, err := os.OpenFile(homeDir+"/tasks.json", os.O_RDWR|os.O_CREATE, 0755)
+	var asJson []byte
+
+	if err != nil {
+		fmt.Println("Tasks file does not exist, creating it now", err)
+
+		_ = os.NewFile(0, homeDir+"/tasks.json")
+	}
+
+	tasksFile, err = os.OpenFile(homeDir+"/tasks.json", os.O_RDWR|os.O_CREATE, 0755)
+
+	if err != nil {
+		color.Red("Error creating tasks file %s\n", err)
+		os.Exit(1)
+	}
+
 	if output {
 		color.Cyan("Tasks Found: %d\n", len(tasks))
+
+		asJson = []byte(fmt.Sprintf(`{
+			"lastAccessed": "%d",
+			"tasks": %s
+		}`, lastAccessed, resBody))
+
+		_, err = tasksFile.Write(asJson)
+
+		if err != nil {
+			color.Red("Error writing to tasks file %s\n", err)
+			os.Exit(1)
+		}
 
 		for _, task := range tasks {
 			color.Cyan("Task Details:")
