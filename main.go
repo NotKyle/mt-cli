@@ -51,6 +51,8 @@ func GetAllTasks(output bool) []Task {
 	}
 
 	if output {
+		color.Cyan("Tasks Found: %d\n", len(tasks))
+
 		for _, task := range tasks {
 			color.Cyan("Task Details:")
 			color.Green("Task ID: %d\n", task.ID)
