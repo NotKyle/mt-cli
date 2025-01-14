@@ -8,9 +8,9 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
-	"runtime"
 	"os/exec"
+	"runtime"
+	"time"
 
 	"github.com/fatih/color"
 
@@ -148,10 +148,10 @@ func GetTaskDetailsByIndex(index int) Task {
 	}
 
 	return Task{
-		ID:         tasks[index].ID,
-		Name:       tasks[index].Name,
+		ID:          tasks[index].ID,
+		Name:        tasks[index].Name,
 		SectionName: tasks[index].SectionName,
-		Token:      tasks[index].Token,
+		Token:       tasks[index].Token,
 	}
 }
 
@@ -257,7 +257,7 @@ func main() {
 	}
 }
 
-func OpenTask(task Task){
+func OpenTask(task Task) {
 	url := fmt.Sprintf("https://www.meistertask.com/app/task/%s", task.Token)
 
 	err := OpenBrowser(url)
@@ -284,4 +284,3 @@ func OpenBrowser(url string) error {
 
 	return err
 }
-
