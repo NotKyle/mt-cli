@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"runtime"
+	"os/exec"
 
 	"github.com/fatih/color"
 
@@ -18,7 +20,8 @@ import (
 type Task struct {
 	ID int
 	Name,
-	SectionName string
+	SectionName,
+	Token string
 }
 
 type TaskComment struct {
@@ -89,6 +92,7 @@ func GetAllTasks(output bool) []Task {
 		for _, task := range tasks {
 			color.Cyan("Task Details:")
 			color.Green("Task ID: %d\n", task.ID)
+			color.Green("Task Token: %s\n", task.Token)
 			color.Green("Task Name: %s\n", task.Name)
 			fmt.Println()
 		}
@@ -117,7 +121,7 @@ func getVars() [3]string {
 	return [3]string{API_BASE_URL, LANE_ID, API_TOKEN}
 }
 
-func GetTaskDetailsByIndex(index int) {
+func GetTaskDetailsByIndex(index int) Task {
 	tasks := GetAllTasks(false)
 
 	if index < 0 || index >= len(tasks) {
@@ -134,12 +138,20 @@ func GetTaskDetailsByIndex(index int) {
 
 	color.Cyan("Task Details:")
 	color.Green("Task ID: %d\n", tasks[index].ID)
+	color.Green("Task Token: %s\n", tasks[index].Token)
 	color.Green("Task Name: %s\n", tasks[index].Name)
 	color.Green("Task Section: %s\n", tasks[index].SectionName)
 
 	color.Cyan("\nTask Comments:")
 	for _, comment := range taskComments {
 		color.Green("%s\n", comment.Text)
+	}
+
+	return Task{
+		ID:         tasks[index].ID,
+		Name:       tasks[index].Name,
+		SectionName: tasks[index].SectionName,
+		Token:      tasks[index].Token,
 	}
 }
 
@@ -220,12 +232,56 @@ func main() {
 		"The task to fetch more details for",
 	)
 
+	taskToOpen := flag.Int(
+		"open",
+		-1,
+		"The task to fetch more details for",
+	)
+
 	flag.Parse()
+
+	if *taskToOpen != -1 {
+		index := (*taskToOpen - 1)
+		task := GetTaskDetailsByIndex(index)
+		OpenTask(task)
+		return
+	}
 
 	if *taskToGet != -1 {
 		index := (*taskToGet - 1)
 		GetTaskDetailsByIndex(index)
+		return
 	} else {
 		GetAllTasks(true)
+		return
 	}
 }
+
+func OpenTask(task Task){
+	url := fmt.Sprintf("https://www.meistertask.com/app/task/%s", task.Token)
+
+	err := OpenBrowser(url)
+
+	if err != nil {
+		color.Red("Error opening browser %s\n", err)
+		os.Exit(1)
+	}
+}
+
+func OpenBrowser(url string) error {
+	var err error
+
+	switch os := runtime.GOOS; os {
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+
+	return err
+}
+
