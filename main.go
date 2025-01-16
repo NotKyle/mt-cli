@@ -89,8 +89,8 @@ func GetAllTasks(output bool) []Task {
 			os.Exit(1)
 		}
 
-		for _, task := range tasks {
-			color.Cyan("Task Details:")
+		for i, task := range tasks {
+			color.Cyan("Task Details (%d):", i+1)
 			color.Green("Task ID: %d\n", task.ID)
 			color.Green("Task Token: %s\n", task.Token)
 			color.Green("Task Name: %s\n", task.Name)
